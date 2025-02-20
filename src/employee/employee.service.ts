@@ -13,6 +13,13 @@ import { LoginEmployeeDto } from './dto/login-employee.dto';
 import { DepartmentService } from 'src/department/department.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { TokensService } from 'src/tokens/tokens.service';
+import {v4 as uuid} from 'uuid';
+import { SendEmailToUserService } from './functions/sendMail';
+import { Send } from 'express';
+import { InviteEmployeeDto } from './dto/invite-employee.dto';
+import { EmployeeStatus } from './dto/employment-status.enum';
+import { EmployeeType } from './dto/employee-type.enum';
 
 @Injectable()
 export class EmployeeService {
@@ -23,10 +30,15 @@ export class EmployeeService {
     private departmentService: DepartmentService,
 
     private readonly jwtService: JwtService,
+
+    private tokenService:TokensService,
+
+    private sendMail:SendEmailToUserService
+
   ) {}
 
   async signUp(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
-    const { department_id, email, phone, password, ...employeeData } =
+    const { department_id, email, phone, ...employeeData } =
       createEmployeeDto;
 
     const existingEmail = await this.employeeRepository.findOne({
@@ -54,19 +66,56 @@ export class EmployeeService {
       throw new Error('Department not found');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     const employee = this.employeeRepository.create({
       ...employeeData,
       email,
       phone,
-      password: hashedPassword,
       department,
     });
 
     return await this.employeeRepository.save(employee);
   }
 
+  async setEmployeeInfo(token: string, password: string) {
+    const validateToken = await this.tokenService.validateToken(token);
+    const employee = await this.employeeRepository.findOne({
+      where: { id: validateToken.employee.id },
+    });
+  
+    if (!employee) {
+      throw new Error('Employee not found');
+    }
+  
+    const hashedPassword = await bcrypt.hash(password, 10);
+  
+    employee.password = hashedPassword;
+    employee.employment_status=EmployeeStatus.Active;
+    await this.employeeRepository.save(employee);
+  
+    return { message: 'Password updated successfully' };
+  }
+  
+  async inviteEmployee(inviteEmployee:InviteEmployeeDto){
+    const employee=await this.employeeRepository.findOne({where:{email:inviteEmployee.email}});
+    if(!employee){
+      throw new NotFoundException("Employee not found")
+    }
+    const name=employee.first_name;
+    const token=uuid();
+    const today = new Date();
+    const expiryDate = new Date(
+      today.setDate(today.getDate() + 15),
+    );
+
+    await this.tokenService.createToken(token,employee,expiryDate)
+    employee.employment_status=EmployeeStatus.Invited;
+    employee.type=inviteEmployee.role;
+    await this.sendMail.inviteEmployee(inviteEmployee.role,name,inviteEmployee.email,token)
+    await this.employeeRepository.save(employee);
+  }
+
+  
   async login(
     loginEmployeeDto: LoginEmployeeDto,
   ): Promise<{ access_token: string }> {

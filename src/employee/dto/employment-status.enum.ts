@@ -1,5 +1,7 @@
 export enum EmployeeStatus {
-  fulltime = 'Fulltime',
-  parttime = 'Parttime',
+  Fulltime = 'Fulltime',
+  Parttime = 'Parttime',
+  Invited='Invited',
+  Active='Active',
   Contract = 'Contract',
 }

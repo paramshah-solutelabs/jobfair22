@@ -27,6 +27,8 @@ export class CreateCandidateDto {
   @MaxLength(20)
   password: string;
 
+  
+
   @IsNotEmpty()
   @IsEmail()
   email: string;

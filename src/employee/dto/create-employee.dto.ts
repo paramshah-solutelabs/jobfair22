@@ -24,9 +24,9 @@ export class CreateEmployeeDto {
   last_name: string;
 
   @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  @IsEnum(EmployeeType)
-  type: EmployeeType;
+  type: EmployeeType | null;
 
   @IsNotEmpty()
   @IsUUID()
@@ -35,11 +35,6 @@ export class CreateEmployeeDto {
   // @IsNotEmpty()
   // @IsBoolean()
   // isRecruiter:boolean
-
-  @IsNotEmpty()
-  @MinLength(8)
-  @MaxLength(20)
-  password: string;
 
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Invalid email format' })

@@ -9,6 +9,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { isHiringManager } from './guards/isHiringManager.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { CandidateModule } from 'src/candidate/candidate.module';
+import { TokensModule } from 'src/tokens/tokens.module';
+import { SendEmailToUserService } from './functions/sendMail';
 
 @Module({
   imports: [
@@ -22,9 +24,10 @@ import { CandidateModule } from 'src/candidate/candidate.module';
     TypeOrmModule.forFeature([Employee]),
     DepartmentModule,
     CandidateModule,
+    TokensModule
   ],
   controllers: [EmployeeController],
-  providers: [EmployeeService, isHiringManager, JwtStrategy],
+  providers: [EmployeeService, isHiringManager, JwtStrategy,SendEmailToUserService],
   exports: [JwtStrategy, PassportModule, EmployeeService],
 })
 export class EmployeeModule {}

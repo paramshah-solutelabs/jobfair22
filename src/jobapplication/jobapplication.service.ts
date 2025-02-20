@@ -13,6 +13,8 @@ import { ServerClient } from 'postmark';
 import { CreateCandidateDto } from 'src/candidate/dto/create-candidate.dto';
 import { GetCandidate } from 'src/candidate/guards/getCandidate.decorator';
 import { Candidate } from 'src/candidate/candidate.entity';
+import { TokensService } from 'src/tokens/tokens.service';
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class JobapplicationService {
@@ -23,6 +25,7 @@ export class JobapplicationService {
     private candidateService: CandidateService,
     private positionService: PositionService,
     private mailService: MailService,
+    private tokenService:TokensService
   ) {
     this.client = new ServerClient(process.env.POSTMARK_SERVER_TOKEN);
   }
@@ -35,22 +38,77 @@ export class JobapplicationService {
     return this.jobApplicationRepository.find({ where: { status } });
   }
 
+  // async createJobApplication(
+  //   createJobApplicationDto: CreateJobApplicationDto,
+  // ): Promise<JobApplication> {
+  //   const foundCandidate=await this.candidateService.getCandidateByEmail(createJobApplicationDto.email);
+
+
+  //   // const candidate = await this.candidateService.getCandidateById(
+  //   //   createJobApplicationDto.candidateId,
+  //   // );
+
+  //   const position = await this.positionService.getPositionById(
+  //     createJobApplicationDto.positionId,
+  //   );
+
+  //   const existingApplication=await this.jobApplicationRepository.findOne({where:{email:createJobApplicationDto.email,position:{id:createJobApplicationDto.positionId}}});
+  //   if (existingApplication) {
+  //     const threeMonthsAgo = new Date();
+  //     console.log(threeMonthsAgo)
+  //     console.log(existingApplication.created_at)
+  //     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  
+  //     if (existingApplication.created_at > threeMonthsAgo) {
+  //       throw new BadRequestException(
+  //         'You can only apply for this position once every 3 months. Please try again later.',
+  //       );
+  //     }
+  //   }
+  
+  //   const jobApplication = this.jobApplicationRepository.create({
+  //     ...createJobApplicationDto,
+  //     // candidate,
+  //     position,
+  //   });
+  //   const savedApplication = await this.jobApplicationRepository.save(jobApplication);
+  //   if(!foundCandidate){
+  //     await this.candidateService.create(jobApplication.email);
+
+  //   }
+    
+  //   const token = uuid();
+  //   const today = new Date();
+  //   const expiryDate = new Date(
+  //     today.setDate(today.getDate() + 15),
+  //   );
+  //   const candidate = await this.candidateService.getCandidateByEmail(jobApplication.email);
+
+    
+  //   await this.tokenService.createToken(token,candidate,expiryDate);
+  //   if(!foundCandidate){
+  //     await this.mailService.welcomeCandidate(createJobApplicationDto.email,token);
+
+  //   }
+  //   return savedApplication;
+  // }
+
+  
   async createJobApplication(
     createJobApplicationDto: CreateJobApplicationDto,
   ): Promise<JobApplication> {
-    // const candidate = await this.candidateService.getCandidateById(
-    //   createJobApplicationDto.candidateId,
-    // );
-
-    const position = await this.positionService.getPositionById(
-      createJobApplicationDto.positionId,
-    );
-
-    const existingApplication=await this.jobApplicationRepository.findOne({where:{email:createJobApplicationDto.email,position:{id:createJobApplicationDto.positionId}}});
+    const foundCandidate = await this.candidateService.getCandidateByEmail(createJobApplicationDto.email);
+    const position = await this.positionService.getPositionById(createJobApplicationDto.positionId);
+  
+    const existingApplication = await this.jobApplicationRepository.findOne({
+      where: {
+        email: createJobApplicationDto.email,
+        position: { id: createJobApplicationDto.positionId },
+      },
+    });
+  
     if (existingApplication) {
       const threeMonthsAgo = new Date();
-      console.log(threeMonthsAgo)
-      console.log(existingApplication.created_at)
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   
       if (existingApplication.created_at > threeMonthsAgo) {
@@ -62,15 +120,28 @@ export class JobapplicationService {
   
     const jobApplication = this.jobApplicationRepository.create({
       ...createJobApplicationDto,
-      // candidate,
       position,
     });
-    const savedApplication =
-      await this.jobApplicationRepository.save(jobApplication);
-    await this.candidateService.create(jobApplication.email);
-    await this.mailService.welcomeCandidate(createJobApplicationDto.email);
+    const savedApplication = await this.jobApplicationRepository.save(jobApplication);
+  
+    if (!foundCandidate) {
+      await this.candidateService.create(jobApplication.email);
+    }
+  
+    const token = uuid();
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 15);
+  
+    const candidate = await this.candidateService.getCandidateByEmail(jobApplication.email);
+    
+    if (!foundCandidate) {
+      await this.tokenService.createToken(token, candidate, expiryDate);
+      await this.mailService.welcomeCandidate(createJobApplicationDto.email, token);
+    }
+  
     return savedApplication;
   }
+  
 
   async save(apl: JobApplication): Promise<JobApplication> {
     return await this.jobApplicationRepository.save(apl);

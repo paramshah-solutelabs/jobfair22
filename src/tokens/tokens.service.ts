@@ -7,6 +7,7 @@ import { Candidate } from 'src/candidate/candidate.entity';
 import { promises } from 'dns';
 import { create } from 'domain';
 import { error } from 'console';
+import { Employee } from 'src/employee/employee.entity';
 
 @Injectable()
 export class TokensService {
@@ -27,16 +28,18 @@ async deleteToken(id:number){
   await this.tokenRepository.remove(foundToken);
 }
 
-async createToken(token: string, candidate: Candidate, expiryDate: Date) {
-  const existingToken=await this.tokenRepository.findOne({where:{candidate:{id:candidate.id}}});
+async createToken(token: string, user: Candidate | Employee, expiryDate: Date) {
+  console.log(user instanceof Employee)
+  const existingToken=await this.tokenRepository.findOne({where:{candidate:{id:user.id}}});
   if(existingToken){
     await this.tokenRepository.remove(existingToken);
   }
     const tokenCreation = this.tokenRepository.create({
         token,
-        candidate,
-        expiryDate,
-    });
+        candidate: user instanceof Candidate ? user : null,
+        employee: user instanceof Employee ? user : null,
+        expiryDate
+      });
 
     return await this.tokenRepository.save(tokenCreation);
 }

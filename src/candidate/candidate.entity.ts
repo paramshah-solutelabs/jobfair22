@@ -68,8 +68,8 @@ export class Candidate {
 
   // @OneToMany(() => Tokens, (token) => token.candidate)
   // tokens: Tokens[];
-  @OneToOne(() => Tokens, (token) => token.candidate) 
-token: Tokens;
+  @OneToOne(() => Tokens, (token) => token.candidate,{nullable:true}) 
+token: Tokens | null;
 
 
 }

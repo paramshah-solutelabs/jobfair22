@@ -12,6 +12,8 @@ import { Interview } from 'src/interview/interview.entity';
 import { OneToMany } from 'typeorm';
 import { Review } from 'src/review/review.entity';
 import { EmployeeType } from './dto/employee-type.enum';
+import { Tokens } from 'src/tokens/tokens.entity';
+import { OneToOne } from 'typeorm';
 
 @Entity()
 export class Employee {
@@ -39,8 +41,8 @@ export class Employee {
   @Column()
   role: string;
 
-  @Column({ type: 'enum', enum: EmployeeType })
-  type: EmployeeType;
+  @Column({ type: 'enum', enum: EmployeeType ,default:null})
+  type: EmployeeType | null;
 
   @Column({ type: 'date' })
   hire_date: string;
@@ -48,7 +50,7 @@ export class Employee {
   @Column({ type: 'enum', enum: EmployeeStatus })
   employment_status: EmployeeStatus;
 
-  @Column()
+  @Column({nullable:true})
   password: string;
 
   @CreateDateColumn()
@@ -64,4 +66,8 @@ export class Employee {
     eager: false,
   })
   interviews: Interview[];
+
+  @OneToOne(() => Tokens, (token) => token.employee , {nullable:true}) 
+  token: Tokens | null  ;
+  
 }

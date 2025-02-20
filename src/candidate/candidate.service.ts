@@ -90,7 +90,8 @@ export class CandidateService {
     return "We have sent an email to the registered email address.Reset your password over there"
   }
 
-  async candidateInfo(createCandidateDto: CreateCandidateDto) {
+  async candidateInfo(createCandidateDto: CreateCandidateDto,token:string) {
+    const validatetoken=await this.tokenService.validateToken(token);
     const existingUser = await this.candidateRepository.findOne({
       where: { email: createCandidateDto.email },
     });
@@ -103,7 +104,11 @@ export class CandidateService {
     }
     createCandidateDto.status = Status.Active;
     Object.assign(existingUser, createCandidateDto);
-    return this.candidateRepository.save(existingUser);
+    const savedUserInfo= this.candidateRepository.save(existingUser);
+    if(savedUserInfo){
+      await this.tokenService.deleteToken(validatetoken.id);
+    }
+    return savedUserInfo;
   }
 
   async login(loginCandidateDto: LoginUser): Promise<{ access_token: string }> {
@@ -172,9 +177,9 @@ export class CandidateService {
     const foundCandidate = await this.candidateRepository.findOne({
       where: { email },
     });
-    if (!foundCandidate) {
-      throw new NotFoundException('Candidate does not exist');
-    }
+    // if (!foundCandidate) {
+    //   throw new NotFoundException('Candidate does not exist');
+    // }
     return foundCandidate;
   }
 }

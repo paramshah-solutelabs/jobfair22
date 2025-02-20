@@ -8,6 +8,7 @@ import { PositionModule } from 'src/position/position.module';
 import { EmployeeModule } from 'src/employee/employee.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailService } from './functions/sendMail';
+import { TokensModule } from 'src/tokens/tokens.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MailService } from './functions/sendMail';
     CandidateModule,
     PositionModule,
     EmployeeModule,
+    TokensModule,
     MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',

@@ -43,11 +43,12 @@ export class MailService {
     }
   }
 
-  async welcomeCandidate(email: string) {
+  async welcomeCandidate(email: string,token:string) {
     const subject = 'JobFair2 - Application Received & Next Steps';
 
     const templateModel = {
       email: email, 
+      token:token,
       action_url: 'https://jobfair2.com/set-up-account', 
     };
     const templateId = 39079447; 

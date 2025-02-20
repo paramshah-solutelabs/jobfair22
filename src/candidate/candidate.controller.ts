@@ -23,8 +23,10 @@ export class CandidateController {
   constructor(private readonly candidateService: CandidateService) {}
 
   @Post('createCandidate')
-  async createCandidate(@Body() createCandidate: CreateCandidateDto) {
-    return await this.candidateService.candidateInfo(createCandidate);
+  async createCandidate(@Body() createCandidate: CreateCandidateDto,@Req() request) {
+    const token=request.headers['authorization'];
+
+    return await this.candidateService.candidateInfo(createCandidate,token);
   }
 
   @Post('login')
